@@ -138,6 +138,7 @@ textarea,.ansrow input{padding:12px;border-radius:14px;border:2px solid var(--li
 </style>
 </head>
 <body>
+  
 <header><div class="wrap bar">
   <button class="btn" id="login">تسجيل دخول</button>
   <a href="#home" class="logo" aria-label="منصة ونار">وَنَار</a>
@@ -161,6 +162,46 @@ textarea,.ansrow input{padding:12px;border-radius:14px;border:2px solid var(--li
 <div class="orbs"><b></b><b></b><b></b></div><i class="prog"></i>
 <div id="toast"></div>
 
+<!-- ضع هذه الأكواد في نهاية ملف الـ HTML (قبل إغلاق وسام </body> مباشرة) -->
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+
+  // 1. الاتصال بقاعدة البيانات
+  const Supabase = createClient('https://zmffrongzbxiuwwxtsfu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptZmZyb25nemJ4aXV3d3h0c2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2ODksImV4cCI6MjA1NjgxNDY4OX0.NbnpjBlUiJg2BqLXMn15tARWcn3_5M83F6-VFH2Zh4');
+
+  // 2. الكود الذي أرسلته في صورتك (ضعه هنا بالداخل):
+  try {
+      // إعدادات الموقع (عناوين، روابط، أرقام)
+      const { data } = await sb.from('settings').select('data').eq('id', 1).single();
+      if (data && data.data) {
+          Object.assign(CFG, data.data);
+      }
+
+      // تسجيل زيارة مرة واحدة لكل جهاز[cite: 5]
+      let v = localStorage.getItem('wn_v') || crypto.randomUUID(); 
+      localStorage.setItem('wn_v', v);
+      await sb.from('visits').upsert({ visitor: v }, { ignoreDuplicates: true });
+
+      // عدد الزوار يتحدث كل 20 ثانية[cite: 5]
+      const pull = async () => {
+          const { count } = await sb.from('visits').select('*', { count: 'exact', head: true });
+          STAT.v = CFG.vbase + count; 
+          updStat();
+      };
+      pull(); 
+      setInterval(pull, 20000);
+
+  } catch (err) {
+      console.error("خطأ في الاتصال:", err);
+  }
+
+  // 3. أما السطر الخاص بالحفظ (await sb.from('settings').update...) 
+  // فلا تضع هكذا في المنتصف، بل أنشئ له دالة خاصة تربطها بزر الحفظ في لوحة التحكم:
+  window.saveSettings = async function(newCfg) {
+      await sb.from('settings').update({ data: newCfg }).eq('id', 1);
+      alert('تم حفظ الإعدادات بنجاح!');
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
@@ -576,6 +617,17 @@ if(window.Lenis&&!reduce){const l=window.lenis=new Lenis({lerp:.08,smoothWheel:t
  l.on('scroll',()=>{window.ScrollTrigger&&ScrollTrigger.update();const m=document.documentElement.scrollHeight-innerHeight;$('.prog').style.transform='scaleX('+(m>0?Math.min(1,scrollY/m):0)+')'});
  gsap.ticker.add(t=>l.raf(t*1000));gsap.ticker.lagSmoothing(0)}
 else addEventListener('scroll',()=>{const m=document.documentElement.scrollHeight-innerHeight;$('.prog').style.transform='scaleX('+(m>0?Math.min(1,scrollY/m):0)+')'});
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm'
+const sb = createClient('https://zmffrongzbxiuwwxtsfu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptZmZyb25nemJ4aXV3d3h0c2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2ODksImV4cCI6MjA1NjgxNDY4OX0.NbnpjBlUiJg2BqLXMn15tARWcn3_5M83F6-VFH2Zh4')
+const mail = u => u.toLowerCase() + '@wannar.app'
+
+async function signUp(username, password, name){
+  const { data, error } = await sb.auth.signUp({ email: mail(username), password })
+  if (error) throw error
+  await sb.from('profiles').insert({ id: data.user.id, username, display_name: name })
+}
+const signIn = (u, p) => sb.auth.signInWithPassword({ email: mail(u), password: p })
 </script>
 </body>
 </html>
