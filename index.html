@@ -591,7 +591,7 @@ function subjPanel(g,t,i){const s=SUBJ[i],rows=rowsFor(g,t,s),grp={},custom=[];
  if(!rows.length)h+='<p class="mute">لا توجد ملفات في هذه المادة بعد.</p>';
  keys.forEach(k=>{const ci=custom.indexOf(k);h+=`<h4 class="grp" style="text-align:right">${esc(k)} <span class="cnt">${grp[k].length}</span>${ci>=0?` <button class="btn ghost" data-rn="${ci}" style="padding:2px 10px">إعادة تسمية</button> <button class="btn ghost" data-ds="${ci}" style="padding:2px 10px">حذف القسم</button>`:''}</h4>`;
   grp[k].forEach(r=>{h+=(r._k!==undefined&&EDIT==r._k)?editRow(r):fileRow(r)})});
- h+=`<datalist id="dl">${[...CATS.map(c=>c[1]),...custom].map(k=>`<option value="${esc(k)}">`).join('')}</datalist><h4 class="grp" style="text-align:right">إضافة ملف</h4><input class="ai" id="af-n" placeholder="اسم الملف"><input class="ai" id="af-l" dir="ltr" placeholder="رابط Google Drive"><input class="ai" id="af-s" list="dl" placeholder="القسم (اختر أو اكتب قسماً جديداً)"><select class="ai" id="af-t"><option value="">نوع الاختبار (للاختبارات فقط)</option>${op(['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'])}</select><button class="btn" data-fa="1">إضافة</button> <button class="btn ghost" data-ns="1">＋ قسم جديد</button></div>`;return h}
+ h+=`<datalist id="dl">${[...CATS.map(c=>c[1]),...custom].map(k=>`<option value="${esc(k)}">`).join('')}</datalist><h4 class="grp" style="text-align:right">إضافة ملفات</h4><textarea class="ai" id="af-l" rows="5" dir="ltr" placeholder="الصق رابطاً أو عدة روابط درايف (رابط في كل سطر). يمكن كتابة الاسم يدوياً بصيغة: اسم الملف | الرابط"></textarea><input class="ai" id="af-n" placeholder="اسم احتياطي (يُستخدم إذا لم يُعرف الاسم تلقائياً)"><input class="ai" id="af-s" list="dl" placeholder="القسم (اختر أو اكتب قسماً جديداً)"><select class="ai" id="af-t"><option value="">نوع الاختبار (للاختبارات فقط)</option>${op(['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'])}</select><label class="mute"><input type="checkbox" id="af-x"> إذا كان الرابط مجلداً أضف محتوياته كملفات</label><input class="ai" id="af-k" dir="ltr" placeholder="مفتاح Google Drive API (لقراءة أسماء الملفات تلقائياً)" value="${esc(GKEY())}"><button class="btn" data-fa="1">إضافة</button> <button class="btn ghost" data-ns="1">＋ قسم جديد</button></div>`;return h}
 function tFil(){const el=$('#tab');if(!el)return;let h='';
  if(!CFG.imported)h+='<div class="body" style="margin-bottom:14px"><p>ملفات الموقع الأساسية مخزنة داخل الكود، ولا يمكن تعديلها أو حذفها قبل نقلها إلى القاعدة (مرة واحدة فقط). الملفات التي تضيفها من هنا تُحفظ في القاعدة مباشرة.</p><button class="btn" data-imp="1">نقل الملفات الأساسية إلى القاعدة</button></div>';
  [9,10,11,12].forEach(g=>{const og=AG==g;h+=`<div class="grade${og?' open':''}"><button class="row" data-g="${g}">الصف ${g}<span class="ar">‹</span></button>`;
@@ -610,6 +610,10 @@ async function importBase(){if(!confirm('سيتم نقل كل ملفات الم�
  const rows=[];for(const k in FILES){const[g,t]=k.split('-');for(const s in FILES[k])FILES[k][s].forEach(f=>rows.push({grade:+g,term:+t,subject:s,name:f[0],fid:f[1],ty:f[2]}))}
  toast('جارٍ النقل…');for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('files').insert(rows.slice(i,i+200));if(error){toast('تعذّر النقل');return}}
  CFG.imported=true;const{error}=await saveCfg();if(error){toast('نُقلت الملفات لكن تعذّر حفظ الحالة');return}await pullFiles();toast('تم النقل، يمكنك الآن التعديل');tFil()}
+const cleanN=n=>n.replace(/\.(pdf|docx?|pptx?|xlsx?|zip|rar|txt|png|jpe?g|mp4)$/i,'').trim();
+const GKEY=()=>{try{return localStorage.getItem('wn_gk')||''}catch(e){return''}};
+async function driveInfo(id,key){try{const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name,mimeType&supportsAllDrives=true&key=${encodeURIComponent(key)}`);return r.ok?await r.json():null}catch(e){return null}}
+async function driveKids(id,key){const out=[];let tok='';try{do{const r=await fetch('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(`'${id}' in parents and trashed=false`)+'&fields=nextPageToken,files(id,name,mimeType)&pageSize=200&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true&key='+encodeURIComponent(key)+(tok?'&pageToken='+tok:''));if(!r.ok)break;const j=await r.json();out.push(...(j.files||[]));tok=j.nextPageToken||''}while(tok)}catch(e){}return out}
 async function adminClick(e){const b=e.target.closest('button');if(!b)return;const d=b.dataset,sf=()=>({grade:+AG,term:+AT2,subject:SUBJ[AS_]});
  const done=async(err,msg)=>{if(err){toast('تعذّر التنفيذ');return}EDIT=null;await pullFiles();tFil();if(msg)toast(msg)};
  if(d.tab){AT=d.tab;EDIT=null;draw();return}
@@ -626,9 +630,21 @@ async function adminClick(e){const b=e.target.closest('button');if(!b)return;con
  if(d.rn!==undefined){const old=SECN[+d.rn],nn=(prompt('الاسم الجديد للقسم',old)||'').trim();if(!nn||nn==old)return;const{error}=await sb.from('files').update({section:nn}).match({...sf(),section:old});return done(error,'تمت إعادة التسمية')}
  if(d.ds!==undefined){const old=SECN[+d.ds];if(!confirm('حذف القسم «'+old+'» وكل ملفاته؟'))return;const{error}=await sb.from('files').delete().match({...sf(),section:old});return done(error,'تم حذف القسم')}
  if(d.ns){const n=(prompt('اسم القسم الجديد')||'').trim();if(n){$('#af-s').value=n;$('#af-n').focus();toast('اكتب اسم الملف ورابطه لإنشاء القسم')}return}
- if(d.fa){const nm=$('#af-n').value.trim(),lk=parseLk($('#af-l').value.trim()),sec=$('#af-s').value,ty=$('#af-t').value;
-  if(!lk){toast('رابط درايف غير صالح');return}if(!nm&&!(sec=='الاختبارات'&&ty)){toast('اكتب اسم الملف');return}
-  const p=place(sec,nm,ty);const{error}=await sb.from('files').insert({...sf(),name:p.name,fid:lk.fid,ty:lk.ty,section:p.section});return done(error,'أُضيف الملف')}
+ if(d.fa){const raw=$('#af-l').value,sec=$('#af-s').value,ty=$('#af-t').value,bk=$('#af-n').value.trim(),ex=$('#af-x').checked,key=$('#af-k').value.trim();
+  try{if(key)localStorage.setItem('wn_gk',key)}catch(e){}
+  const items=[];raw.split(/\n+/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(.*?)\s*[|｜]\s*(https?:\S+)$/),lk=parseLk(m?m[2]:l);if(lk)items.push({...lk,nm:m?m[1].trim():''})});
+  if(!items.length){toast('الصق رابط درايف واحداً على الأقل');return}
+  if(!bk&&!key&&items.some(x=>!x.nm)&&!confirm('بدون مفتاح Drive API ما أقدر أقرأ أسماء الملفات تلقائياً، وسيُسمّى كل ملف «ملف 1، ملف 2…» ويمكنك تعديل الأسماء لاحقاً. متابعة؟'))return;
+  b.disabled=true;toast('جارٍ قراءة الملفات…');const rows=[];let auto=0,fail=0;
+  for(const it of items){let info=null;if(key&&!it.nm){info=await driveInfo(it.fid,key);if(!info)fail++}
+   if(it.ty!='d'&&info&&info.mimeType=='application/vnd.google-apps.folder')it.ty='d';
+   if(it.ty=='d'&&ex&&key){const kids=await driveKids(it.fid,key);if(kids.length){kids.forEach(k=>{rows.push({nm:cleanN(k.name),fid:k.id,ty:k.mimeType=='application/vnd.google-apps.folder'?'d':'f'});auto++});continue}fail++}
+   let nm=it.nm;if(!nm&&info&&info.name){nm=cleanN(info.name);auto++}rows.push({nm,fid:it.fid,ty:it.ty})}
+  rows.forEach((r,k)=>{if(!r.nm)r.nm=(bk||'ملف')+(rows.length>1?' '+(k+1):'')});
+  const out=rows.map(r=>{const p=place(sec,r.nm,ty);return{...sf(),name:p.name,fid:r.fid,ty:r.ty,section:p.section}});
+  let error=null;for(let k=0;k<out.length&&!error;k+=200)error=(await sb.from('files').insert(out.slice(k,k+200))).error;
+  b.disabled=false;await done(error,`أُضيف ${out.length} ملف`+(auto?` (${auto} باسم تلقائي)`:''));
+  if(!error&&fail)setTimeout(()=>toast('تعذّر قراءة بعض الأسماء: تأكد أن الملفات مشاركة «أي شخص لديه الرابط» وأن Drive API مفعّل'),2600);return}
  if(d.qg){AQG=+d.qg;tDis();return}
  if(d.qa){const t=$('#qt').value.trim();if(!t)return;const{error}=await sb.from('questions').insert({grade:AQG,text:t});if(error)toast('تعذّر النشر');else tDis();return}
  if(d.qd){if(!confirm('حذف السؤال وكل ردوده؟'))return;const{error}=await sb.from('questions').delete().eq('id',d.qd);if(error)toast('تعذّر الحذف');else tDis();return}
