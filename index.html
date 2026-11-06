@@ -135,6 +135,7 @@ textarea,.ansrow input{padding:12px;border-radius:14px;border:2px solid var(--li
 .cnt{background:var(--teal);color:#fff;border-radius:20px;padding:2px 12px;font-size:.9rem;font-weight:700}.row .cnt{background:#fff;color:var(--teal)}.row>span{display:flex;align-items:center;gap:8px}
 .ai{width:100%;padding:12px;border-radius:14px;border:2px solid var(--line);font:inherit;background:var(--card);color:var(--ink);margin:4px 0 10px}label.mute{display:block;font-size:.9rem}
 .art .img{height:170px;display:block;padding:0}.art .img img{width:100%;height:100%;object-fit:cover;display:block}.cover{width:100%;border-radius:20px;box-shadow:var(--sh);margin-bottom:16px;display:block}.body p{margin:8px 0}.body li{margin:4px 0}.body hr{border:0;border-top:1px solid var(--line);margin:16px 0}.tip{background:color-mix(in srgb,var(--spark) 22%,transparent);border-right:4px solid var(--spark);border-radius:14px;padding:12px 14px;margin:12px 0;color:var(--ink)}.tt{font-weight:800;color:var(--teal)!important;margin-top:16px!important}
+.subj button.on{background:var(--teal);color:#fff}.subj button.on .cnt{background:#fff;color:var(--teal)}.adsub{padding:10px 0}
 </style>
 </head>
 <body>
@@ -208,14 +209,14 @@ subjects:(g,t)=>{const F=FL(g,t);const grp=(n,a)=>a.length?`<h2 class="grp" styl
  if(+g<=10)return top+SG910.map(([n,a])=>grp(n,a.map(s=>F&&F[s]?`<a href="#sub-${g}-${t}-${SUBJ.indexOf(s)}">${dn(g,s)}</a>`:`<button data-t="ملفات ${dn(g,s)} ستتوفر قريباً">${dn(g,s)}</button>`))).join('');
  if(!F)return top+GN.slice(0,4).map((n,k)=>grp(n,(k==0?G.shared:k==1?G.sci:k==2?G.lit:G.solo).map(s=>`<button data-t="ملفات ${s} ستتوفر قريباً">${s}</button>`))).join('');
  return top+GN.map((n,k)=>grp(n,SG.map((x,i)=>[x[0],x[1],i]).filter(x=>x[1]==k&&(F[x[0]]||(k<4&&!x[0].startsWith('الرياضيات')))).map(x=>F[x[0]]?`<a href="#sub-${g}-${t}-${x[2]}">${x[0]}</a>`:`<button data-t="ملفات ${x[0]} ستتوفر قريباً">${x[0]}</button>`))).join('')},
-subject:(g,t,i,c)=>{const F=(FL(g,t)||{})[SUBJ[i]]||[],T=`الصف ${g} - الترم ${t==1?'الأول':'الثاني'}`;
- const fr=f=>`<div class="file"><div class="fn">${f[0].replace(/^(اختبارات|ملخصات|الكتب) › /,'')}</div><div class="fa"><button class="btn" data-id="${f[1]}" data-ty="${f[2]}" data-nm="${SUBJ[i]} - ${f[0]}">فتح هنا</button><a class="btn ghost" href="${ext(f[1],f[2])}" target="_blank" rel="noopener">معاينة خارجية</a></div></div>`;
- if(!c){const n=k=>F.filter(f=>cat(f[0])==k).length;return `<a class="btn back" href="#s-${g}-${t}">العودة ›</a><h1 class="page-t">${dn(g,SUBJ[i])}</h1><p class="mute" style="margin-bottom:14px">${T}</p>`+(F.length?CATS.filter(x=>n(x[0])).map(x=>`<a class="big-link" href="#sub-${g}-${t}-${i}-${x[0]}"><span>${x[2]} ${x[1]}</span><span class="cnt">${n(x[0])}</span></a>`).join(''):'<div class="body"><p>لا توجد ملفات لهذه المادة بعد.</p></div>')}
- const C=CATS.find(x=>x[0]==c),L=F.filter(f=>cat(f[0])==c);let body;
- if(c=='ex'){const m={};L.forEach(f=>(m[st(f[0])]=m[st(f[0])]||[]).push(f));const ord=['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'];
-  body=Object.keys(m).sort((a,b)=>(ord.indexOf(a)+1||9)-(ord.indexOf(b)+1||9)).map(k=>`<div class="grade"><button class="row">${k}<span><span class="cnt">${m[k].length}</span> <span class="ar">‹</span></span></button><div class="sub">${m[k].map(fr).join('')}</div></div>`).join('')}
- else body=L.map(fr).join('');
- return `<a class="btn back" href="#sub-${g}-${t}-${i}">العودة ›</a><h1 class="page-t">${C[1]} - ${dn(g,SUBJ[i])}</h1><p class="mute" style="margin-bottom:14px">${T}</p>`+body},
+subject:(g,t,i,c)=>{const F=(FL(g,t)||{})[SUBJ[i]]||[],T=`الصف ${g} - الترم ${t==1?'الأول':'الثاني'}`,S=secsOf(F);
+ const fr=f=>`<div class="file"><div class="fn">${esc(f[0].replace(/^(اختبارات|ملخصات|الكتب) › /,''))}</div><div class="fa"><button class="btn" data-id="${f[1]}" data-ty="${f[2]}" data-nm="${esc(dn(g,SUBJ[i])+' - '+f[0])}">فتح هنا</button><a class="btn ghost" href="${ext(f[1],f[2])}" target="_blank" rel="noopener">معاينة خارجية</a></div></div>`;
+ if(!c)return `<a class="btn back" href="#s-${g}-${t}">العودة ›</a><h1 class="page-t">${dn(g,SUBJ[i])}</h1><p class="mute" style="margin-bottom:14px">${T}</p>`+(S.length?S.map(x=>`<a class="big-link" href="#sub-${g}-${t}-${i}-${x.c}"><span>${x.i} ${esc(x.t)}</span><span class="cnt">${x.f.length}</span></a>`).join(''):'<div class="body"><p>لا توجد ملفات لهذه المادة بعد.</p></div>');
+ const C=S.find(x=>x.c==c);let body='';
+ if(C&&c=='ex'){const m={};C.f.forEach(f=>(m[st(f[0])]=m[st(f[0])]||[]).push(f));const ord=['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'];
+  body=Object.keys(m).sort((a,b)=>(ord.indexOf(a)+1||9)-(ord.indexOf(b)+1||9)).map(k=>`<div class="grade"><button class="row">${esc(k)}<span><span class="cnt">${m[k].length}</span> <span class="ar">‹</span></span></button><div class="sub">${m[k].map(fr).join('')}</div></div>`).join('')}
+ else if(C)body=C.f.map(fr).join('');else body='<div class="body"><p>هذا القسم فارغ.</p></div>';
+ return `<a class="btn back" href="#sub-${g}-${t}-${i}">العودة ›</a><h1 class="page-t">${esc(C?C.t:'')} - ${dn(g,SUBJ[i])}</h1><p class="mute" style="margin-bottom:14px">${T}</p>`+body},
 book:()=>`<a class="btn back" href="#home">العودة ›</a><h1 class="page-t">احجز إعلانك</h1><p class="mute" style="margin-bottom:14px">اختر وسيلة التواصل المناسبة لك:</p><a class="big-link" href="${safe(CFG.wa)}" target="_blank" rel="noopener">قناة الواتساب${ico.wa}</a><a class="big-link" href="${safe(CFG.ig)}" target="_blank" rel="noopener">حساب الانستقرام${ico.ig}</a><a class="big-link" href="${wam(CFG.phone)}" target="_blank" rel="noopener"><span>مراسلة مدير ونار واتساب<br><small dir="ltr">${esc(CFG.phone)}</small></span>${ico.wa}</a>`,
 admin:()=>`<h1 class="page-t">لوحة التحكم</h1><div id="adm"></div>`,
 discuss:()=>`<h1 class="page-t">مجموعة النقاش</h1><p class="mute">اختر صفك وشارك في أسئلة النقاش.</p><div class="chips">${[9,10,11,12].map(g=>`<button class="chip${g==DGR?' on':''}" data-g="${g}">الصف ${g}</button>`).join('')}</div><div id="dq"></div>`,
@@ -233,7 +234,7 @@ function route(){UNS.splice(0).forEach(f=>f());
  else if(h==='discuss')html=views.discuss();
  else if(ARTS[h])html=views.article(h);
  else if(h==='about-us')html=views.about();
- else if(/^sub-(9|10|11|12)-[12]-\d+(-(ex|sm|bk|ot))?$/.test(h)&&SUBJ[+h.split('-')[3]]){const p=h.split('-');html=views.subject(p[1],p[2],+p[3],p[4])}
+ else if(/^sub-(9|10|11|12)-[12]-\d+(-(ex|sm|bk|ot|c\d+))?$/.test(h)&&SUBJ[+h.split('-')[3]]){const p=h.split('-');html=views.subject(p[1],p[2],+p[3],p[4])}
  else if(/^s-(9|10|11|12)-[12]$/.test(h)){const p=h.split('-');html=views.subjects(p[1],p[2])}
  else html=views.home();
  const go=()=>{app.innerHTML=html;window.lenis?lenis.scrollTo(0,{immediate:true}):scrollTo(0,0);bind();fx();if(h==='discuss')discuss();if(h==='admin')admin()};
@@ -272,7 +273,7 @@ $('#close').onclick=()=>menu.classList.remove('on');
 menu.onclick=e=>{if(e.target===menu||e.target.tagName==='A'){menu.classList.remove('on');if(e.target.dataset.go)setTimeout(()=>{const t=document.getElementById(e.target.dataset.go);t&&t.scrollIntoView({behavior:'smooth'})},80)}};
 /* ===== بيانات وأدوات ===== */
 const UNS=[],AS=[],STAT={v:5200,f:4200};let VC=0,EXTRA=[];
-const CFG={title:'منصة وَنَار',tag:'نتعب اليوم لنضيء غداً',sub:'كل ما تحتاجه للدراسة في مكان واحد ☆',ad:'احجز إعلانك الآن في منصة ونار',wa:'https://whatsapp.com/channel/0029Vb5eEzbCxoAxWHswKl1e',ig:'https://instagram.com/wanner.team.om',phone:'95721253',vbase:5200,followers:4200};
+const CFG={title:'منصة وَنَار',tag:'نتعب اليوم لنضيء غداً',sub:'كل ما تحتاجه للدراسة في مكان واحد ☆',ad:'احجز إعلانك الآن في منصة ونار',wa:'https://whatsapp.com/channel/0029Vb5eEzbCxoAxWHswKl1e',ig:'https://instagram.com/wanner.team.om',phone:'95721253',vbase:5200,followers:4200,imported:false};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safe=u=>/^https:\/\//.test(u)?esc(u):'#';const wam=p=>{let d=String(p).replace(/\D/g,'');if(d.length==8)d='968'+d;return 'https://wa.me/'+d+'?text='+encodeURIComponent('مرحباً، أرغب بحجز إعلان في منصة ونار')};
 const bld=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
@@ -476,7 +477,8 @@ const ARTS={
 };
 const SG910=[['المواد العلمية',['الكيمياء','الفيزياء','الأحياء','الرياضيات']],['المواد الأساسية',['التربية الإسلامية','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية']],['المواد الفردية',['تقنية المعلومات','الرياضة المدرسية','فنون موسيقية','فنون تشكيلية']]];
 const DN={'فنون موسيقية':'المهارات الموسيقية','فنون تشكيلية':'الفنون التشكيلية'};const dn=(g,s)=>+g<=10?(DN[s]||s):s;
-const FL=(g,t)=>{const b=FILES[g+'-'+t],e=EXTRA.filter(x=>x.g==g&&x.t==t);if(!b&&!e.length)return;const o={};if(b)for(const k in b)o[k]=b[k].slice();e.forEach(x=>(o[x.s]=o[x.s]||[]).push([x.n,x.fid,x.ty]));return o};let DGR=12;try{DGR=+localStorage.getItem('wg')||12}catch(e){}
+const FL=(g,t)=>{const b=CFG.imported?null:FILES[g+'-'+t],e=EXTRA.filter(x=>x.g==g&&x.t==t);if(!b&&!e.length)return;const o={};if(b)for(const k in b)o[k]=b[k].slice();e.forEach(x=>(o[x.s]=o[x.s]||[]).push([x.n,x.fid,x.ty,x.sec]));return o};
+const secsOf=F=>{const m={},cus=[];F.forEach(f=>{let k;if(f[3]){let i=cus.indexOf(f[3]);if(i<0){cus.push(f[3]);i=cus.length-1}k='c'+i}else k=cat(f[0]);(m[k]=m[k]||[]).push(f)});const L=CATS.filter(x=>m[x[0]]).map(x=>({c:x[0],t:x[1],i:x[2],f:m[x[0]]}));cus.forEach((n,i)=>L.push({c:'c'+i,t:n,i:'📁',f:m['c'+i]}));return L};
 const GN=['المواد المشتركة','المواد العلمية','المواد الأدبية','المواد الفردية','ملفات عامة'];
 const SG=[['التربية الإسلامية',0],['اللغة العربية',0],['اللغة الإنجليزية',0],['الدراسات الاجتماعية',0],['الفيزياء',1],['الكيمياء',1],['الأحياء',1],['الرياضيات',1],['الرياضيات المتقدمة',1],['الرياضيات الأساسية',2],['العالم من حولي',2],['جغرافيا',2],['علوم بيئية',2],['الرياضة المدرسية',3],['فنون تشكيلية',3],['فنون موسيقية',3],['تقنية المعلومات',3],['اختبارات نهائية لكل المواد',4]];
 const SUBJ=SG.map(x=>x[0]);
@@ -525,8 +527,8 @@ $('#ok').onclick=async()=>{const m=$('#am');
 /* ===== الإحصائيات والإعدادات والملفات ===== */
 function updStat(){if(!window.gsap)return;document.querySelectorAll('[data-s]').forEach(el=>{if(!el.dataset.done)return;const o={v:+el.textContent.replace(/\D/g,'')};gsap.to(o,{v:STAT[el.dataset.s],duration:1.6,ease:'power2.out',onUpdate:()=>el.textContent=Math.round(o.v).toLocaleString('en-US')})})}
 async function pullV(){try{const {count}=await sb.from('visits').select('*',{count:'exact',head:true});if(count!=null){VC=count;STAT.v=CFG.vbase+VC;updStat()}}catch(e){}}
-async function pullCfg(){try{const {data}=await sb.from('settings').select('data').eq('id',1).maybeSingle();if(!data)return;const o=JSON.stringify(CFG);Object.assign(CFG,data.data||{});STAT.v=CFG.vbase+VC;STAT.f=+CFG.followers;updStat();if(JSON.stringify(CFG)!==o&&['','#home','#contact','#book'].includes(location.hash))route()}catch(e){}}
-async function pullFiles(){try{const {data}=await sb.from('files').select('*');const n=(data||[]).map(x=>({_k:x.id,g:x.grade,t:x.term,s:x.subject,n:x.name,fid:x.fid,ty:x.ty})),o=JSON.stringify(EXTRA);EXTRA=n;if(JSON.stringify(n)!==o){if(/^#(s|sub)-/.test(location.hash))route();if(location.hash==='#admin')adminList()}}catch(e){}}
+async function pullCfg(){try{const {data}=await sb.from('settings').select('data').eq('id',1).maybeSingle();if(!data)return;const o=JSON.stringify(CFG);Object.assign(CFG,data.data||{});STAT.v=CFG.vbase+VC;STAT.f=+CFG.followers;updStat();if(JSON.stringify(CFG)!==o&&(['','#home','#contact','#book'].includes(location.hash)||/^#(s|sub)-/.test(location.hash)))route()}catch(e){}}
+async function pullFiles(){try{const {data}=await sb.from('files').select('*').order('id');const n=(data||[]).map(x=>({_k:x.id,g:x.grade,t:x.term,s:x.subject,n:x.name,fid:x.fid,ty:x.ty,sec:x.section})),o=JSON.stringify(EXTRA);EXTRA=n;if(JSON.stringify(n)!==o){if(/^#(s|sub)-/.test(location.hash))route();if(location.hash==='#admin')adminList()}}catch(e){}}
 async function initDB(){
  if(!window.supabase)return;
  sb=supabase.createClient(SB_URL,SB_KEY);DB=true;
@@ -564,23 +566,79 @@ function discuss(){
   const ch=sb.channel('disc-'+DGR+'-'+Date.now()).on('postgres_changes',{event:'*',schema:'public',table:'answers'},load).on('postgres_changes',{event:'*',schema:'public',table:'questions'},load).subscribe();
   UNS.push(()=>sb.removeChannel(ch))})()}
 /* ===== لوحة التحكم (للمشرف فقط) ===== */
-function adminList(){const el=$('#fl');if(!el)return;el.innerHTML='';EXTRA.forEach(x=>{const r=document.createElement('div');r.className='file';const n=document.createElement('div');n.className='fn';n.textContent=`${x.g}/${x.t} · ${x.s} · ${x.n}`;const b=document.createElement('button');b.className='btn ghost';b.textContent='حذف';b.onclick=async()=>{const {error}=await sb.from('files').delete().eq('id',x._k);if(error)toast('تعذّر الحذف');else pullFiles()};r.append(n,b);el.append(r)});if(!EXTRA.length)el.innerHTML='<p class="mute">لا توجد ملفات مضافة من اللوحة.</p>'}
+const saveCfg=()=>sb.from('settings').upsert({id:1,data:{...CFG}});
+let AT='txt',AG=null,AT2=null,AS_=null,AQG=12,EDIT=null,SECN=[];
+const TABS=[['txt','النصوص'],['lnk','الروابط والأرقام'],['fil','الملفات'],['dis','أسئلة النقاش']];
+const STDS={'الاختبارات':'ex','الملخصات':'sm','الكتب':'bk','ملفات أخرى':'ot'};
+const op=a=>a.map(x=>Array.isArray(x)?`<option value="${x[0]}">${x[1]}</option>`:`<option value="${x}">${x}</option>`).join('');
+const subsFor=g=>+g<=10?SG910.flatMap(x=>x[1]):SUBJ;
+const rowsFor=(g,t,s)=>{const r=EXTRA.filter(x=>x.g==g&&x.t==t&&x.s==s);if(CFG.imported)return r;return[...((FILES[g+'-'+t]||{})[s]||[]).map(f=>({n:f[0],fid:f[1],ty:f[2],ro:1})),...r]};
+const parseLk=l=>{const m=l.match(/(?:id=|\/d\/|\/folders\/)([\w-]{10,})/);return m?{fid:m[1],ty:/\/folders\//.test(l)?'d':'f'}:null};
+const place=(sec,nm,ty)=>{sec=(sec||'').trim();if(!sec)return{name:nm,section:null};const std=STDS[sec];if(!std)return{name:nm,section:sec};if(cat(nm)==std)return{name:nm,section:null};
+ return{name:{ex:ty?`اختبارات › ${ty}${nm?` (${nm})`:''}`:'اختبارات › '+nm,sm:'ملخصات › '+nm,bk:'الكتب › '+nm,ot:'ملفات › '+nm}[std],section:null}};
+function adminList(){if(AT=='fil'&&$('#tab'))tFil()}
+function draw(){document.querySelectorAll('#tabs .chip').forEach(c=>c.classList.toggle('on',c.dataset.tab==AT));({txt:tTxt,lnk:tLnk,fil:tFil,dis:tDis})[AT]()}
+function cfgForm(F,title,extra){$('#tab').innerHTML=`<div class="body"><h3 style="margin-top:0">${title}</h3>${F.map(f=>`<label class="mute">${f[1]}</label><input class="ai" data-k="${f[0]}" value="${esc(CFG[f[0]])}">`).join('')}${extra}<button class="btn" id="sv">حفظ للجميع</button></div>`;
+ $('#sv').onclick=async()=>{F.forEach(f=>{const i=$('#tab [data-k="'+f[0]+'"]');CFG[f[0]]=(f[0]=='vbase'||f[0]=='followers')?(+i.value||0):i.value.trim()});const{error}=await saveCfg();if(error)toast('تعذّر الحفظ');else{toast('تم الحفظ وسيظهر للجميع');STAT.v=CFG.vbase+VC;STAT.f=+CFG.followers}}}
+const tTxt=()=>cfgForm([['title','عنوان الصفحة الرئيسية'],['tag','الشعار الفرعي'],['sub','النص تحت الشعار'],['ad','نص الإعلان']],'نصوص الصفحة الرئيسية','');
+const tLnk=()=>cfgForm([['wa','رابط واتساب (https)'],['ig','رابط انستغرام (https)'],['phone','رقم مدير ونار'],['vbase','رقم البداية لعدد الزوار'],['followers','عدد المتابعين']],'الروابط والأرقام',`<p class="mute">الزوار المسجّلون: <b>${VC}</b> · الظاهر للجميع: <b>${CFG.vbase+VC}</b></p>`);
+function fileRow(r){return `<div class="file"><div class="fn">${esc(r.n)}</div><div class="fa"><a class="btn ghost" href="${esc(ext(r.fid,r.ty))}" target="_blank" rel="noopener">فتح</a>${r.ro?'<span class="mute">للقراءة فقط</span>':`<button class="btn ghost" data-ed="${r._k}">تعديل</button><button class="btn ghost" data-del="${r._k}">حذف</button>`}</div></div>`}
+function editRow(r){return `<div class="file" style="display:block"><input class="ai" data-e="n" value="${esc(r.n)}"><input class="ai" data-e="l" dir="ltr" value="${esc(ext(r.fid,r.ty))}"><input class="ai" data-e="s" list="dl" placeholder="القسم (اتركه فارغاً للتحديد التلقائي)" value="${esc(r.sec||'')}"><button class="btn" data-sv="${r._k}">حفظ</button> <button class="btn ghost" data-cn="1">إلغاء</button></div>`}
+function subjPanel(g,t,i){const s=SUBJ[i],rows=rowsFor(g,t,s),grp={},custom=[];
+ rows.forEach(r=>{const k=r.sec||CATS.find(c=>c[0]==cat(r.n))[1];(grp[k]=grp[k]||[]).push(r);if(r.sec&&!custom.includes(r.sec))custom.push(r.sec)});
+ SECN=custom;const keys=[...CATS.map(c=>c[1]).filter(k=>grp[k]),...custom];
+ let h=`<div class="body" style="margin-top:12px"><h3 style="margin-top:0">${esc(dn(g,s))} · الصف ${g} · ${t==1?'الترم الأول':'الترم الثاني'}</h3>`;
+ if(!rows.length)h+='<p class="mute">لا توجد ملفات في هذه المادة بعد.</p>';
+ keys.forEach(k=>{const ci=custom.indexOf(k);h+=`<h4 class="grp" style="text-align:right">${esc(k)} <span class="cnt">${grp[k].length}</span>${ci>=0?` <button class="btn ghost" data-rn="${ci}" style="padding:2px 10px">إعادة تسمية</button> <button class="btn ghost" data-ds="${ci}" style="padding:2px 10px">حذف القسم</button>`:''}</h4>`;
+  grp[k].forEach(r=>{h+=(r._k!==undefined&&EDIT==r._k)?editRow(r):fileRow(r)})});
+ h+=`<datalist id="dl">${[...CATS.map(c=>c[1]),...custom].map(k=>`<option value="${esc(k)}">`).join('')}</datalist><h4 class="grp" style="text-align:right">إضافة ملف</h4><input class="ai" id="af-n" placeholder="اسم الملف"><input class="ai" id="af-l" dir="ltr" placeholder="رابط Google Drive"><input class="ai" id="af-s" list="dl" placeholder="القسم (اختر أو اكتب قسماً جديداً)"><select class="ai" id="af-t"><option value="">نوع الاختبار (للاختبارات فقط)</option>${op(['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'])}</select><button class="btn" data-fa="1">إضافة</button> <button class="btn ghost" data-ns="1">＋ قسم جديد</button></div>`;return h}
+function tFil(){const el=$('#tab');if(!el)return;let h='';
+ if(!CFG.imported)h+='<div class="body" style="margin-bottom:14px"><p>ملفات الموقع الأساسية مخزنة داخل الكود، ولا يمكن تعديلها أو حذفها قبل نقلها إلى القاعدة (مرة واحدة فقط). الملفات التي تضيفها من هنا تُحفظ في القاعدة مباشرة.</p><button class="btn" data-imp="1">نقل الملفات الأساسية إلى القاعدة</button></div>';
+ [9,10,11,12].forEach(g=>{const og=AG==g;h+=`<div class="grade${og?' open':''}"><button class="row" data-g="${g}">الصف ${g}<span class="ar">‹</span></button>`;
+  if(og){h+='<div class="adsub"><div class="chips">'+[1,2].map(t=>`<button class="chip${AT2==t?' on':''}" data-term="${t}">${t==1?'الترم الأول':'الترم الثاني'}</button>`).join('')+'</div>';
+   if(AT2){h+='<div class="subj">'+subsFor(g).map(s=>{const i=SUBJ.indexOf(s);return `<button class="${AS_===i?'on':''}" data-sub="${i}">${esc(dn(g,s))} <span class="cnt">${rowsFor(g,AT2,s).length}</span></button>`}).join('')+'</div>';
+    if(AS_!==null)h+=subjPanel(g,AT2,AS_)}
+   h+='</div>'}
+  h+='</div>'});
+ el.innerHTML=h}
+async function tDis(){const el=$('#tab');el.innerHTML='<p class="mute">جارٍ التحميل…</p>';
+ const{data:qs}=await sb.from('questions').select('*').eq('grade',AQG).order('created_at',{ascending:false});
+ const ids=(qs||[]).map(q=>q.id);const{data:as}=ids.length?await sb.from('answers').select('*').in('qid',ids).order('created_at'):{data:[]};
+ if(AT!='dis')return;
+ el.innerHTML=`<div class="chips">${[9,10,11,12].map(g=>`<button class="chip${g==AQG?' on':''}" data-qg="${g}">الصف ${g}</button>`).join('')}</div><div class="body"><textarea id="qt" rows="2" maxlength="300" placeholder="سؤال نقاش جديد للصف ${AQG}"></textarea><button class="btn" data-qa="1">نشر السؤال</button></div>`+((qs||[]).length?qs.map(q=>`<div class="body" style="margin-top:12px"><b>${esc(q.text)}</b>${(as||[]).filter(a=>a.qid==q.id).map(a=>`<p class="an"><b>${esc(a.name)}:</b> ${esc(a.text)} <button class="btn ghost" data-ad="${a.id}" style="padding:2px 10px">حذف</button></p>`).join('')}<button class="btn ghost" data-qd="${q.id}" style="margin-top:8px">حذف السؤال</button></div>`).join(''):'<p class="mute" style="margin-top:12px">لا توجد أسئلة لهذا الصف.</p>')}
+async function importBase(){if(!confirm('سيتم نقل كل ملفات الموقع الأساسية إلى القاعدة لتعديلها. متابعة؟'))return;
+ const rows=[];for(const k in FILES){const[g,t]=k.split('-');for(const s in FILES[k])FILES[k][s].forEach(f=>rows.push({grade:+g,term:+t,subject:s,name:f[0],fid:f[1],ty:f[2]}))}
+ toast('جارٍ النقل…');for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('files').insert(rows.slice(i,i+200));if(error){toast('تعذّر النقل');return}}
+ CFG.imported=true;const{error}=await saveCfg();if(error){toast('نُقلت الملفات لكن تعذّر حفظ الحالة');return}await pullFiles();toast('تم النقل، يمكنك الآن التعديل');tFil()}
+async function adminClick(e){const b=e.target.closest('button');if(!b)return;const d=b.dataset,sf=()=>({grade:+AG,term:+AT2,subject:SUBJ[AS_]});
+ const done=async(err,msg)=>{if(err){toast('تعذّر التنفيذ');return}EDIT=null;await pullFiles();tFil();if(msg)toast(msg)};
+ if(d.tab){AT=d.tab;EDIT=null;draw();return}
+ if(d.g){AG=AG==+d.g?null:+d.g;AT2=null;AS_=null;EDIT=null;tFil();return}
+ if(d.term){AT2=+d.term;AS_=null;EDIT=null;tFil();return}
+ if(d.sub!==undefined){AS_=+d.sub;EDIT=null;tFil();return}
+ if(d.imp){importBase();return}
+ if(d.ed){EDIT=+d.ed;tFil();return}
+ if(d.cn){EDIT=null;tFil();return}
+ if(d.sv){const r=b.closest('.file'),v=k=>r.querySelector('[data-e="'+k+'"]').value.trim(),row=EXTRA.find(x=>x._k==d.sv),lk=v('l')?parseLk(v('l')):{fid:row.fid,ty:row.ty};
+  if(!lk){toast('رابط غير صالح');return}if(!v('n')){toast('اكتب الاسم');return}
+  const p=place(v('s'),v('n'));const{error}=await sb.from('files').update({name:p.name,fid:lk.fid,ty:lk.ty,section:p.section}).eq('id',d.sv);return done(error,'تم الحفظ')}
+ if(d.del){if(!confirm('حذف هذا الملف؟'))return;const{error}=await sb.from('files').delete().eq('id',d.del);return done(error,'تم الحذف')}
+ if(d.rn!==undefined){const old=SECN[+d.rn],nn=(prompt('الاسم الجديد للقسم',old)||'').trim();if(!nn||nn==old)return;const{error}=await sb.from('files').update({section:nn}).match({...sf(),section:old});return done(error,'تمت إعادة التسمية')}
+ if(d.ds!==undefined){const old=SECN[+d.ds];if(!confirm('حذف القسم «'+old+'» وكل ملفاته؟'))return;const{error}=await sb.from('files').delete().match({...sf(),section:old});return done(error,'تم حذف القسم')}
+ if(d.ns){const n=(prompt('اسم القسم الجديد')||'').trim();if(n){$('#af-s').value=n;$('#af-n').focus();toast('اكتب اسم الملف ورابطه لإنشاء القسم')}return}
+ if(d.fa){const nm=$('#af-n').value.trim(),lk=parseLk($('#af-l').value.trim()),sec=$('#af-s').value,ty=$('#af-t').value;
+  if(!lk){toast('رابط درايف غير صالح');return}if(!nm&&!(sec=='الاختبارات'&&ty)){toast('اكتب اسم الملف');return}
+  const p=place(sec,nm,ty);const{error}=await sb.from('files').insert({...sf(),name:p.name,fid:lk.fid,ty:lk.ty,section:p.section});return done(error,'أُضيف الملف')}
+ if(d.qg){AQG=+d.qg;tDis();return}
+ if(d.qa){const t=$('#qt').value.trim();if(!t)return;const{error}=await sb.from('questions').insert({grade:AQG,text:t});if(error)toast('تعذّر النشر');else tDis();return}
+ if(d.qd){if(!confirm('حذف السؤال وكل ردوده؟'))return;const{error}=await sb.from('questions').delete().eq('id',d.qd);if(error)toast('تعذّر الحذف');else tDis();return}
+ if(d.ad){const{error}=await sb.from('answers').delete().eq('id',d.ad);if(error)toast('تعذّر الحذف');else tDis()}}
 async function admin(){const box=$('#adm');
  if(!sb){box.innerHTML='<div class="body"><p>لوحة التحكم تحتاج اتصال قاعدة البيانات.</p></div>';return}
  if(!ME){box.innerHTML='<div class="body"><p>سجّل دخولك بحساب المشرف أولاً.</p><button class="btn" id="al">تسجيل الدخول</button></div>';$('#al').onclick=askLogin;return}
  if(!ADMIN){box.innerHTML='<div class="body"><p>هذه الصفحة للمشرف فقط.</p></div>';return}
- const F=[['title','عنوان الصفحة الرئيسية'],['tag','الشعار الفرعي'],['sub','النص تحت الشعار'],['ad','نص الإعلان'],['wa','رابط واتساب (https)'],['ig','رابط انستغرام (https)'],['phone','رقم مدير ونار'],['vbase','رقم البداية لعدد الزوار'],['followers','عدد المتابعين']];
- const op=a=>a.map(x=>Array.isArray(x)?`<option value="${x[0]}">${x[1]}</option>`:`<option value="${x}">${x}</option>`).join('');
- box.innerHTML=`<div class="body"><h3 style="margin-top:0">إعدادات الموقع</h3>${F.map(f=>`<label class="mute">${f[1]}</label><input class="ai" data-k="${f[0]}" value="${esc(CFG[f[0]])}">`).join('')}<button class="btn" id="sv">حفظ للجميع</button><p class="mute">عدد الزوار المسجّلين حالياً: <b>${VC}</b></p></div>
- <div class="body" style="margin-top:14px"><h3 style="margin-top:0">إضافة ملف</h3><select class="ai" id="fg">${op([9,10,11,12])}</select><select class="ai" id="ft">${op([[1,'الترم الأول'],[2,'الترم الثاني']])}</select><select class="ai" id="fs">${op(SUBJ)}</select><select class="ai" id="fc">${op([['ex','الاختبارات'],['sm','الملخصات'],['bk','الكتب'],['ot','أخرى']])}</select><select class="ai" id="fy">${op(['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'])}</select><input class="ai" id="fn2" placeholder="اسم الملف (مثال: الوحدة الأولى)"><input class="ai" id="fk" dir="ltr" placeholder="رابط Google Drive"><button class="btn" id="fa">إضافة</button><div id="fl" style="margin-top:14px"></div></div>
- <p class="mute" style="margin-top:14px">أسئلة النقاش تُضاف من صفحة مجموعة النقاش.</p>`;
- adminList();
- $('#sv').onclick=async()=>{const o={};box.querySelectorAll('[data-k]').forEach(i=>{const k=i.dataset.k;o[k]=(k=='vbase'||k=='followers')?(+i.value||0):i.value.trim()});const {error}=await sb.from('settings').upsert({id:1,data:o});if(error)toast('تعذّر الحفظ');else{toast('تم الحفظ وسيظهر للجميع');pullCfg()}};
- $('#fa').onclick=async()=>{const grade=+$('#fg').value,term=+$('#ft').value,subject=$('#fs').value,c=$('#fc').value,ty=$('#fy').value,nm=$('#fn2').value.trim(),lk=$('#fk').value.trim();
-  const m=lk.match(/(?:id=|\/d\/|\/folders\/)([\w-]{10,})/);if(!m){toast('رابط درايف غير صالح');return}
-  const name=c=='ex'?`اختبارات › ${ty}${nm?` (${nm})`:''}`:c=='sm'?`ملخصات › ${nm||'ملخص'}`:c=='bk'?`الكتب › ${nm||'كتاب'}`:'ملفات › '+(nm||'ملف');
-  const {error}=await sb.from('files').insert({grade,term,subject,name,fid:m[1],ty:/\/folders\//.test(lk)?'d':'f'});
-  if(error)toast('تعذّر الإضافة');else{$('#fn2').value=$('#fk').value='';toast('أُضيف الملف');pullFiles()}}}
+ box.innerHTML=`<div class="chips" id="tabs">${TABS.map(t=>`<button class="chip" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div><div id="tab"></div>`;
+ box.onclick=adminClick;draw()}
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 initDB();
