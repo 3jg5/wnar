@@ -136,6 +136,7 @@ textarea,.ansrow input{padding:12px;border-radius:14px;border:2px solid var(--li
 .ai{width:100%;padding:12px;border-radius:14px;border:2px solid var(--line);font:inherit;background:var(--card);color:var(--ink);margin:4px 0 10px}label.mute{display:block;font-size:.9rem}
 .art .img{height:170px;display:block;padding:0}.art .img img{width:100%;height:100%;object-fit:cover;display:block}.cover{width:100%;border-radius:20px;box-shadow:var(--sh);margin-bottom:16px;display:block}.body p{margin:8px 0}.body li{margin:4px 0}.body hr{border:0;border-top:1px solid var(--line);margin:16px 0}.tip{background:color-mix(in srgb,var(--spark) 22%,transparent);border-right:4px solid var(--spark);border-radius:14px;padding:12px 14px;margin:12px 0;color:var(--ink)}.tt{font-weight:800;color:var(--teal)!important;margin-top:16px!important}
 .subj button.on{background:var(--teal);color:#fff}.subj button.on .cnt{background:#fff;color:var(--teal)}.adsub{padding:10px 0}
+.file.ed{display:flex;gap:8px;align-items:center}.file.ed .ai{margin:0}.file.ed .nm{flex:1 1 160px;min-width:0}.file.ed .sc{flex:0 1 160px;width:auto}.ck{width:20px;height:20px;accent-color:var(--teal);flex:none}.file.ed .btn{padding:8px 12px;flex:none}details{margin:8px 0}summary{cursor:pointer}@media(max-width:600px){.file.ed{flex-wrap:wrap}.file.ed .nm{flex:1 1 100%;order:2}.file.ed .ck{order:1}.file.ed .sc{order:3;flex:1}}
 </style>
 </head>
 <body>
@@ -582,17 +583,40 @@ function cfgForm(F,title,extra){$('#tab').innerHTML=`<div class="body"><h3 style
  $('#sv').onclick=async()=>{F.forEach(f=>{const i=$('#tab [data-k="'+f[0]+'"]');CFG[f[0]]=(f[0]=='vbase'||f[0]=='followers')?(+i.value||0):i.value.trim()});const{error}=await saveCfg();if(error)toast('تعذّر الحفظ');else{toast('تم الحفظ وسيظهر للجميع');STAT.v=CFG.vbase+VC;STAT.f=+CFG.followers}}}
 const tTxt=()=>cfgForm([['title','عنوان الصفحة الرئيسية'],['tag','الشعار الفرعي'],['sub','النص تحت الشعار'],['ad','نص الإعلان']],'نصوص الصفحة الرئيسية','');
 const tLnk=()=>cfgForm([['wa','رابط واتساب (https)'],['ig','رابط انستغرام (https)'],['phone','رقم مدير ونار'],['vbase','رقم البداية لعدد الزوار'],['followers','عدد المتابعين']],'الروابط والأرقام',`<p class="mute">الزوار المسجّلون: <b>${VC}</b> · الظاهر للجميع: <b>${CFG.vbase+VC}</b></p>`);
-function fileRow(r){return `<div class="file"><div class="fn">${esc(r.n)}</div><div class="fa"><a class="btn ghost" href="${esc(ext(r.fid,r.ty))}" target="_blank" rel="noopener">فتح</a>${r.ro?'<span class="mute">للقراءة فقط</span>':`<button class="btn ghost" data-ed="${r._k}">تعديل</button><button class="btn ghost" data-del="${r._k}">حذف</button>`}</div></div>`}
-function editRow(r){return `<div class="file" style="display:block"><input class="ai" data-e="n" value="${esc(r.n)}"><input class="ai" data-e="l" dir="ltr" value="${esc(ext(r.fid,r.ty))}"><input class="ai" data-e="s" list="dl" placeholder="القسم (اتركه فارغاً للتحديد التلقائي)" value="${esc(r.sec||'')}"><button class="btn" data-sv="${r._k}">حفظ</button> <button class="btn ghost" data-cn="1">إلغاء</button></div>`}
-function subjPanel(g,t,i){const s=SUBJ[i],rows=rowsFor(g,t,s),grp={},custom=[];
+const PFX=/^(اختبارات|ملخصات|الكتب|ملفات) › /;let SEL=new Set(),SELK='',PV=[];
+const gType=n=>/قصير|quiz|short/i.test(n)?'الاختبارات القصيرة':/نهائ|final/i.test(n)?'الاختبارات النهائية':'الأسئلة العامة';
+const guessSec=n=>/ملخص|summar/i.test(n)?'الملخصات':/كتاب|كتب|book/i.test(n)?'الكتب':/اختبار|امتحان|أسئلة|اسئلة|exam|quiz|test/i.test(n)?'الاختبارات':'ملفات أخرى';
+const secList=()=>[...CATS.map(c=>c[1]),...SECN];
+const secOpts=(cur,empty)=>(empty?`<option value="">${empty}</option>`:'')+secList().map(k=>`<option${k==cur?' selected':''}>${esc(k)}</option>`).join('')+'<option value="__new">＋ قسم جديد…</option>';
+function addOpt(sel,n){let o=[...sel.options].find(x=>x.value==n);if(!o){o=new Option(n,n);sel.add(o,sel.options.length-1)}sel.value=n}
+const mv=(r,sec)=>{const b=r.n.replace(PFX,''),p=place(sec,b,gType(b));return{name:p.name,section:p.section}};
+function parseSmart(raw){const out=[];let pend='';
+ for(const l of raw.split(/\n/).map(x=>x.trim()).filter(Boolean)){const u=l.match(/https?:\/\/\S+/);if(!u){pend=l.replace(/[:：\-–\s]+$/,'').trim();continue}
+  const lk=parseLk(u[0]);if(!lk)continue;const pre=l.slice(0,u.index).replace(/[|｜:：\-–\s]+$/,'').trim();
+  out.push(pre?{...lk,nm:pre}:{...lk,nm:pend,hd:pend})}
+ const c={},i={};out.forEach(x=>{if(x.hd)c[x.hd]=(c[x.hd]||0)+1});out.forEach(x=>{if(x.hd&&c[x.hd]>1){i[x.hd]=(i[x.hd]||0)+1;x.nm=x.hd+' ('+i[x.hd]+')'}});return out}
+function syncPV(){document.querySelectorAll('#pv [data-pv]').forEach(r=>{const k=+r.dataset.pv;if(PV[k]){PV[k].nm=r.querySelector('.pn').value;PV[k].sec=r.querySelector('.ps').value}})}
+function renderPV(){const el=$('#pv');if(!el)return;if(!PV.length){el.innerHTML='';return}
+ el.innerHTML=`<p class="mute" style="margin-top:12px">تم التعرف على <b>${PV.length}</b> ملف. عدّل الاسم أو القسم إن لزم ثم اضغط إضافة.</p>`+PV.map((r,k)=>`<div class="file ed" data-pv="${k}"><input class="ai pn nm" value="${esc(r.nm)}"><select class="ai ps sc">${secOpts(r.sec)}</select><button class="btn ghost" data-px="${k}" title="إزالة">✕</button></div>`).join('')+`<button class="btn" data-fa="1">إضافة الكل (${PV.length})</button> <button class="btn ghost" data-pc="1">إلغاء</button>`}
+function bulk(){const el=$('#bulk');if(!el)return;if(!SEL.size){el.innerHTML='';return}
+ el.innerHTML=`<div class="body" style="margin-bottom:10px;background:color-mix(in srgb,var(--spark) 22%,transparent)"><b>المحدد: ${SEL.size}</b> <select class="ai" id="bm" style="width:auto;display:inline-block;margin:4px">${secOpts('','— انقل إلى قسم —')}</select> <button class="btn" data-bm="1">نقل</button> <button class="btn ghost" data-bd="1">حذف المحدد</button> <button class="btn ghost" data-bc="1">إلغاء التحديد</button></div>`}
+function fileRow(r){const ro=r.ro,m=r.n.match(PFX),rest=m?r.n.slice(m[0].length):r.n,cur=r.sec||CATS.find(c=>c[0]==cat(r.n))[1],dis=ro?' disabled':'';
+ return `<div class="file ed"><input type="checkbox" class="ck" data-ck="${r._k}"${SEL.has(r._k)?' checked':''}${dis}><input class="ai nm" data-nm="${r._k}" value="${esc(rest)}"${dis}><select class="ai sc" data-sc="${r._k}"${dis}>${secOpts(cur)}</select><a class="btn ghost" href="${esc(ext(r.fid,r.ty))}" target="_blank" rel="noopener" title="فتح">↗</a>${ro?'':`<button class="btn ghost" data-del="${r._k}" title="حذف">🗑</button>`}</div>`}
+async function adminChange(e){const t=e.target;
+ if(t.matches('select')&&t.value=='__new'){const n=(prompt('اسم القسم الجديد')||'').trim();if(!n){t.selectedIndex=0;return}addOpt(t,n)}
+ if(t.id=='af-all'){SEL.clear();if(t.checked)rowsFor(AG,AT2,SUBJ[AS_]).forEach(r=>{if(r._k!==undefined)SEL.add(r._k)});document.querySelectorAll('.ck').forEach(c=>c.checked=t.checked&&!c.disabled);bulk();return}
+ if(t.classList.contains('ck')){const k=+t.dataset.ck;t.checked?SEL.add(k):SEL.delete(k);bulk();return}
+ if(t.dataset.nm!==undefined){const r=EXTRA.find(x=>x._k==t.dataset.nm);if(!r)return;const m=r.n.match(PFX),v=t.value.trim();if(!v){t.value=m?r.n.slice(m[0].length):r.n;return}const name=(m?m[0]:'')+v;if(name==r.n)return;const{error}=await sb.from('files').update({name}).eq('id',r._k);if(error)toast('تعذّر الحفظ');else{toast('تم الحفظ ✓');await pullFiles()}return}
+ if(t.dataset.sc!==undefined){const r=EXTRA.find(x=>x._k==t.dataset.sc);if(!r)return;const{error}=await sb.from('files').update(mv(r,t.value)).eq('id',r._k);if(error)toast('تعذّر النقل');else{toast('تم النقل ✓');await pullFiles();tFil()}}}
+function subjPanel(g,t,i){const kk=g+'-'+t+'-'+i;if(kk!=SELK){SEL.clear();SELK=kk;PV=[]}const s=SUBJ[i],rows=rowsFor(g,t,s),grp={},custom=[];
  rows.forEach(r=>{const k=r.sec||CATS.find(c=>c[0]==cat(r.n))[1];(grp[k]=grp[k]||[]).push(r);if(r.sec&&!custom.includes(r.sec))custom.push(r.sec)});
  SECN=custom;const keys=[...CATS.map(c=>c[1]).filter(k=>grp[k]),...custom];
- let h=`<div class="body" style="margin-top:12px"><h3 style="margin-top:0">${esc(dn(g,s))} · الصف ${g} · ${t==1?'الترم الأول':'الترم الثاني'}</h3>`;
+ let h=`<div class="body" style="margin-top:12px"><h3 style="margin-top:0">${esc(dn(g,s))} · الصف ${g} · ${t==1?'الترم الأول':'الترم الثاني'}</h3><div id="bulk"></div><label class="mute"><input type="checkbox" id="af-all"> تحديد الكل</label>`;
  if(!rows.length)h+='<p class="mute">لا توجد ملفات في هذه المادة بعد.</p>';
  keys.forEach(k=>{const ci=custom.indexOf(k);h+=`<h4 class="grp" style="text-align:right">${esc(k)} <span class="cnt">${grp[k].length}</span>${ci>=0?` <button class="btn ghost" data-rn="${ci}" style="padding:2px 10px">إعادة تسمية</button> <button class="btn ghost" data-ds="${ci}" style="padding:2px 10px">حذف القسم</button>`:''}</h4>`;
-  grp[k].forEach(r=>{h+=(r._k!==undefined&&EDIT==r._k)?editRow(r):fileRow(r)})});
- h+=`<datalist id="dl">${[...CATS.map(c=>c[1]),...custom].map(k=>`<option value="${esc(k)}">`).join('')}</datalist><h4 class="grp" style="text-align:right">إضافة ملفات</h4><textarea class="ai" id="af-l" rows="5" dir="ltr" placeholder="الصق رابطاً أو عدة روابط درايف (رابط في كل سطر). يمكن كتابة الاسم يدوياً بصيغة: اسم الملف | الرابط"></textarea><input class="ai" id="af-n" placeholder="اسم احتياطي (يُستخدم إذا لم يُعرف الاسم تلقائياً)"><input class="ai" id="af-s" list="dl" placeholder="القسم (اختر أو اكتب قسماً جديداً)"><select class="ai" id="af-t"><option value="">نوع الاختبار (للاختبارات فقط)</option>${op(['الأسئلة العامة','الاختبارات القصيرة','الاختبارات النهائية'])}</select><label class="mute"><input type="checkbox" id="af-x"> إذا كان الرابط مجلداً أضف محتوياته كملفات</label><input class="ai" id="af-k" dir="ltr" placeholder="مفتاح Google Drive API (لقراءة أسماء الملفات تلقائياً)" value="${esc(GKEY())}"><button class="btn" data-fa="1">إضافة</button> <button class="btn ghost" data-ns="1">＋ قسم جديد</button></div>`;return h}
-function tFil(){const el=$('#tab');if(!el)return;let h='';
+  grp[k].forEach(r=>{h+=fileRow(r)})});
+ h+=`<datalist id="dl">${[...CATS.map(c=>c[1]),...custom].map(k=>`<option value="${esc(k)}">`).join('')}</datalist><h4 class="grp" style="text-align:right">إضافة ملفات</h4><textarea class="ai" id="af-l" rows="5" placeholder="الصق الروابط بأي صيغة:&#10;• رابط في كل سطر&#10;• أو اسم الملف في سطر والرابط تحته&#10;• أو: اسم الملف | الرابط"></textarea><select class="ai" id="af-s">${secOpts('','القسم: حسب الاسم تلقائياً')}</select><details><summary class="mute">خيارات متقدمة: قراءة الأسماء من Google</summary><input class="ai" id="af-k" dir="ltr" placeholder="مفتاح Google Drive API" value="${esc(GKEY())}"><label class="mute"><input type="checkbox" id="af-x"> إذا كان الرابط مجلداً أضف محتوياته كملفات</label></details><button class="btn" data-an="1">تحليل الروابط</button> <button class="btn ghost" data-ns="1">＋ قسم جديد</button><div id="pv"></div></div>`;return h}
+function tFil(){const el=$('#tab');if(!el)return;syncPV();let h='';
  if(!CFG.imported)h+='<div class="body" style="margin-bottom:14px"><p>ملفات الموقع الأساسية مخزنة داخل الكود، ولا يمكن تعديلها أو حذفها قبل نقلها إلى القاعدة (مرة واحدة فقط). الملفات التي تضيفها من هنا تُحفظ في القاعدة مباشرة.</p><button class="btn" data-imp="1">نقل الملفات الأساسية إلى القاعدة</button></div>';
  [9,10,11,12].forEach(g=>{const og=AG==g;h+=`<div class="grade${og?' open':''}"><button class="row" data-g="${g}">الصف ${g}<span class="ar">‹</span></button>`;
   if(og){h+='<div class="adsub"><div class="chips">'+[1,2].map(t=>`<button class="chip${AT2==t?' on':''}" data-term="${t}">${t==1?'الترم الأول':'الترم الثاني'}</button>`).join('')+'</div>';
@@ -600,7 +624,7 @@ function tFil(){const el=$('#tab');if(!el)return;let h='';
     if(AS_!==null)h+=subjPanel(g,AT2,AS_)}
    h+='</div>'}
   h+='</div>'});
- el.innerHTML=h}
+ el.innerHTML=h;bulk();renderPV()}
 async function tDis(){const el=$('#tab');el.innerHTML='<p class="mute">جارٍ التحميل…</p>';
  const{data:qs}=await sb.from('questions').select('*').eq('grade',AQG).order('created_at',{ascending:false});
  const ids=(qs||[]).map(q=>q.id);const{data:as}=ids.length?await sb.from('answers').select('*').in('qid',ids).order('created_at'):{data:[]};
@@ -629,22 +653,24 @@ async function adminClick(e){const b=e.target.closest('button');if(!b)return;con
  if(d.del){if(!confirm('حذف هذا الملف؟'))return;const{error}=await sb.from('files').delete().eq('id',d.del);return done(error,'تم الحذف')}
  if(d.rn!==undefined){const old=SECN[+d.rn],nn=(prompt('الاسم الجديد للقسم',old)||'').trim();if(!nn||nn==old)return;const{error}=await sb.from('files').update({section:nn}).match({...sf(),section:old});return done(error,'تمت إعادة التسمية')}
  if(d.ds!==undefined){const old=SECN[+d.ds];if(!confirm('حذف القسم «'+old+'» وكل ملفاته؟'))return;const{error}=await sb.from('files').delete().match({...sf(),section:old});return done(error,'تم حذف القسم')}
- if(d.ns){const n=(prompt('اسم القسم الجديد')||'').trim();if(n){$('#af-s').value=n;$('#af-n').focus();toast('اكتب اسم الملف ورابطه لإنشاء القسم')}return}
- if(d.fa){const raw=$('#af-l').value,sec=$('#af-s').value,ty=$('#af-t').value,bk=$('#af-n').value.trim(),ex=$('#af-x').checked,key=$('#af-k').value.trim();
-  try{if(key)localStorage.setItem('wn_gk',key)}catch(e){}
-  const items=[];raw.split(/\n+/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(.*?)\s*[|｜]\s*(https?:\S+)$/),lk=parseLk(m?m[2]:l);if(lk)items.push({...lk,nm:m?m[1].trim():''})});
-  if(!items.length){toast('الصق رابط درايف واحداً على الأقل');return}
-  if(!bk&&!key&&items.some(x=>!x.nm)&&!confirm('بدون مفتاح Drive API ما أقدر أقرأ أسماء الملفات تلقائياً، وسيُسمّى كل ملف «ملف 1، ملف 2…» ويمكنك تعديل الأسماء لاحقاً. متابعة؟'))return;
-  b.disabled=true;toast('جارٍ قراءة الملفات…');const rows=[];let auto=0,fail=0;
-  for(const it of items){let info=null;if(key&&!it.nm){info=await driveInfo(it.fid,key);if(!info)fail++}
+ if(d.ns){const n=(prompt('اسم القسم الجديد')||'').trim();if(n){addOpt($('#af-s'),n);toast('الصق الروابط واضغط تحليل، وسيُنشأ القسم مع أول ملف')}return}
+ if(d.an){const raw=$('#af-l').value,key=$('#af-k').value.trim(),ex=$('#af-x').checked,all=$('#af-s').value;try{if(key)localStorage.setItem('wn_gk',key)}catch(e){}
+  const items=parseSmart(raw);if(!items.length){toast('الصق رابط درايف واحداً على الأقل');return}
+  b.disabled=true;toast('جارٍ التحليل…');PV=[];
+  for(const it of items){let info=null;if(key&&!it.nm)info=await driveInfo(it.fid,key);
    if(it.ty!='d'&&info&&info.mimeType=='application/vnd.google-apps.folder')it.ty='d';
-   if(it.ty=='d'&&ex&&key){const kids=await driveKids(it.fid,key);if(kids.length){kids.forEach(k=>{rows.push({nm:cleanN(k.name),fid:k.id,ty:k.mimeType=='application/vnd.google-apps.folder'?'d':'f'});auto++});continue}fail++}
-   let nm=it.nm;if(!nm&&info&&info.name){nm=cleanN(info.name);auto++}rows.push({nm,fid:it.fid,ty:it.ty})}
-  rows.forEach((r,k)=>{if(!r.nm)r.nm=(bk||'ملف')+(rows.length>1?' '+(k+1):'')});
-  const out=rows.map(r=>{const p=place(sec,r.nm,ty);return{...sf(),name:p.name,fid:r.fid,ty:r.ty,section:p.section}});
+   if(it.ty=='d'&&ex&&key){const kids=await driveKids(it.fid,key);if(kids.length){kids.forEach(k=>PV.push({nm:cleanN(k.name),fid:k.id,ty:k.mimeType=='application/vnd.google-apps.folder'?'d':'f'}));continue}}
+   PV.push({nm:it.nm||(info&&info.name?cleanN(info.name):''),fid:it.fid,ty:it.ty})}
+  b.disabled=false;PV.forEach((r,k)=>{if(!r.nm)r.nm='ملف '+(k+1);r.sec=all&&all!='__new'?all:guessSec(r.nm)});renderPV();return}
+ if(d.px!==undefined){syncPV();PV.splice(+d.px,1);renderPV();return}
+ if(d.pc){PV=[];renderPV();return}
+ if(d.fa){syncPV();if(!PV.length)return;b.disabled=true;
+  const out=PV.map(r=>{const nm=(r.nm||'').trim()||'ملف',p=place(r.sec||'ملفات أخرى',nm,gType(nm));return{...sf(),name:p.name,fid:r.fid,ty:r.ty,section:p.section}});
   let error=null;for(let k=0;k<out.length&&!error;k+=200)error=(await sb.from('files').insert(out.slice(k,k+200))).error;
-  b.disabled=false;await done(error,`أُضيف ${out.length} ملف`+(auto?` (${auto} باسم تلقائي)`:''));
-  if(!error&&fail)setTimeout(()=>toast('تعذّر قراءة بعض الأسماء: تأكد أن الملفات مشاركة «أي شخص لديه الرابط» وأن Drive API مفعّل'),2600);return}
+  b.disabled=false;if(!error){PV=[];$('#af-l').value=''}return done(error,`أُضيف ${out.length} ملف ✓`)}
+ if(d.bm){const sec=$('#bm').value;if(!sec||sec=='__new'){toast('اختر القسم أولاً');return}const rows=EXTRA.filter(x=>SEL.has(x._k));const res=await Promise.all(rows.map(r=>sb.from('files').update(mv(r,sec)).eq('id',r._k)));SEL.clear();return done(res.some(x=>x.error)?1:0,'تم النقل ✓')}
+ if(d.bd){if(!confirm('حذف '+SEL.size+' ملف؟'))return;const{error}=await sb.from('files').delete().in('id',[...SEL]);SEL.clear();return done(error,'تم الحذف')}
+ if(d.bc){SEL.clear();tFil();return}
  if(d.qg){AQG=+d.qg;tDis();return}
  if(d.qa){const t=$('#qt').value.trim();if(!t)return;const{error}=await sb.from('questions').insert({grade:AQG,text:t});if(error)toast('تعذّر النشر');else tDis();return}
  if(d.qd){if(!confirm('حذف السؤال وكل ردوده؟'))return;const{error}=await sb.from('questions').delete().eq('id',d.qd);if(error)toast('تعذّر الحذف');else tDis();return}
@@ -654,7 +680,7 @@ async function admin(){const box=$('#adm');
  if(!ME){box.innerHTML='<div class="body"><p>سجّل دخولك بحساب المشرف أولاً.</p><button class="btn" id="al">تسجيل الدخول</button></div>';$('#al').onclick=askLogin;return}
  if(!ADMIN){box.innerHTML='<div class="body"><p>هذه الصفحة للمشرف فقط.</p></div>';return}
  box.innerHTML=`<div class="chips" id="tabs">${TABS.map(t=>`<button class="chip" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div><div id="tab"></div>`;
- box.onclick=adminClick;draw()}
+ box.onclick=adminClick;box.onchange=adminChange;box.onkeydown=e=>{if(e.key=='Enter'&&e.target.matches('input.nm'))e.target.blur()};draw()}
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 initDB();
